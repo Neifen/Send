@@ -1,0 +1,82 @@
+{
+  "project_info": {
+    "project_number": "1066071076679",
+    "project_id": "send-c0a9a",
+    "storage_bucket": "send-c0a9a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1066071076679:android:dfccaf6b393ae04a442662",
+        "android_client_info": {
+          "package_name": "com.example.send"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1066071076679-d3om78o5ocml8rln8ehjp913388v5jid.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyASRSMvEraZj2UjMsb3WrrxorgAgf7US-U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1066071076679-d3om78o5ocml8rln8ehjp913388v5jid.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1066071076679-71h86bqm3fh7k9v05go9n5oh24lno1hh.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.nate.send"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1066071076679:android:9b6d36ec7cb1cc76442662",
+        "android_client_info": {
+          "package_name": "com.nate.send"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1066071076679-d3om78o5ocml8rln8ehjp913388v5jid.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyASRSMvEraZj2UjMsb3WrrxorgAgf7US-U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1066071076679-d3om78o5ocml8rln8ehjp913388v5jid.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1066071076679-71h86bqm3fh7k9v05go9n5oh24lno1hh.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.nate.send"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
