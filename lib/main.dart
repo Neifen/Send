@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:send/components/my_scaffold.dart';
 import 'package:send/firebase_options.dart';
-import 'package:send/pages/overview.dart';
-import 'package:send/pages/welcome_page.dart';
+import 'package:send/pages/overview_page.dart';
 import 'package:send/provider/login_provider.dart';
 
 void main() async {
@@ -12,7 +11,11 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const MyApp());
+  runApp(ChangeNotifierProvider(
+      create: (_) => LoginProvider(),
+      child: const MyScaffold(
+        child: MyApp(),
+      )));
 }
 
 class MyApp extends StatelessWidget {
@@ -35,7 +38,9 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyScaffold(
+        child: OverviewPage(),
+      ),
     );
   }
 }
@@ -63,9 +68,8 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
         create: (_) => LoginProvider(),
-        child: MyScaffold(
-          title: widget.title,
-          child: const OverviewPage(),
+        child: const MyScaffold(
+          child: OverviewPage(),
         ));
   }
 }
