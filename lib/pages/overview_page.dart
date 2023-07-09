@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:send/components/my_loader.dart';
 import 'package:send/database/route_data.dart';
+import 'package:send/pages/add_route/add_route_page.dart';
 import 'package:send/pages/route_page.dart';
 import 'package:send/services/route_service.dart';
 import 'package:camera_camera/camera_camera.dart';
@@ -23,14 +24,7 @@ class OverviewPage extends StatelessWidget {
           ],
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => CameraCamera(
-                        onFile: (file) {
-                          Navigator.pop(context);
-                        },
-                      ))),
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddRoutePage())),
           child: const Icon(Icons.add),
         ),
         body: Padding(
