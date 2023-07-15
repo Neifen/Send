@@ -15,8 +15,7 @@ class RouteRatingDisplay extends StatefulWidget {
 class _RouteRatingDisplayState extends State<RouteRatingDisplay> {
   @override
   Widget build(BuildContext context) {
-    double currentRating = widget.route.getRating();
-
+    String currentRating = widget.route.getRating();
     return Container(
         decoration: BoxDecoration(border: Border.all()),
         child: Padding(
@@ -26,7 +25,7 @@ class _RouteRatingDisplayState extends State<RouteRatingDisplay> {
               const Text('Rating:', style: TextStyle(fontWeight: FontWeight.bold)),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Text('$currentRating'),
+                child: Text(currentRating),
               ),
               RatingBar.builder(
                   minRating: 1,

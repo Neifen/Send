@@ -4,16 +4,19 @@ import 'package:send/database/route_data.dart';
 import 'package:send/pages/add_route/add_route_page.dart';
 import 'package:send/pages/route_page.dart';
 import 'package:send/services/route_service.dart';
-import 'package:camera_camera/camera_camera.dart';
 
-class OverviewPage extends StatelessWidget {
+class OverviewPage extends StatefulWidget {
   const OverviewPage({super.key});
 
+  @override
+  State<OverviewPage> createState() => _OverviewPageState();
+}
+
+class _OverviewPageState extends State<OverviewPage> {
   @override
   Widget build(BuildContext context) {
     final overviewService = RouteService();
     final Future<List> list = RouteService().getAll();
-
     return Scaffold(
         appBar: AppBar(
           title: const Text('SEND'),
@@ -24,7 +27,9 @@ class OverviewPage extends StatelessWidget {
           ],
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddRoutePage())),
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AddEditRoutePage())).then((value) {
+            setState(() {});
+          }),
           child: const Icon(Icons.add),
         ),
         body: Padding(
@@ -43,7 +48,11 @@ class OverviewPage extends StatelessWidget {
 
                               return OutlinedButton(
                                 onPressed: () {
-                                  Navigator.push(context, MaterialPageRoute(builder: (_) => RoutePage(routeData)));
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => RoutePage(routeData))).then((updated) {
+                                    if (updated) {
+                                      setState(() {});
+                                    }
+                                  });
                                 },
                                 style: OutlinedButton.styleFrom(
                                   shape: RoundedRectangleBorder(
@@ -56,8 +65,8 @@ class OverviewPage extends StatelessWidget {
                                       title: Text(routeData.getDescription()),
                                       subtitle: Text('test: ${routeData.getGrade()}'),
                                       leading: MyLoader(
-                                        future: overviewService.getSmallImage(routeData.getPhoto()),
-                                        builder: (context, snapshot) => Image.memory(snapshot.data),
+                                        future: overviewService.getImageUrl(routeData.getPhotoPath()),
+                                        builder: (context, snapshot) => Image.network(snapshot.data),
                                       )),
                                 ),
                               );

@@ -43,8 +43,10 @@ dependencies:
   google_mobile_ads: ^3.0.0
   firebase_storage: ^11.2.4
   flutter_rating_bar: ^4.0.1
-  camera_camera: ^3.0.0
-  camera: ^0.10.5+2
+  image_picker: ^1.0.0
+  uuid: ^3.0.7
+  firebase_storage_web: ^3.6.5
+
 
 dev_dependencies:
   flutter_test:

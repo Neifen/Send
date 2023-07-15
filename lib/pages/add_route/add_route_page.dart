@@ -1,81 +1,163 @@
-import 'dart:developer';
-import 'dart:io';
-
-import 'package:camera_camera/camera_camera.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:send/database/route_data.dart';
+import 'package:send/pages/add_route/add_route_photo_display.dart';
+import 'package:send/provider/image_add_route_provider.dart';
+import 'package:send/provider/login_provider.dart';
+import 'package:send/services/route_service.dart';
 
-class AddRoutePage extends StatefulWidget {
-  const AddRoutePage({super.key});
+class AddEditRoutePage extends StatefulWidget {
+  final RouteData? routeData;
+  const AddEditRoutePage({super.key, this.routeData});
 
   @override
-  State<AddRoutePage> createState() => _AddRoutePageState();
+  State<AddEditRoutePage> createState() => _AddEditRoutePageState();
 }
 
-class _AddRoutePageState extends State<AddRoutePage> {
-  Future? photoFuture;
-  bool first = true;
+class _AddEditRoutePageState extends State<AddEditRoutePage> {
+  bool dataInitialized = false;
+  TextEditingController gradingController = TextEditingController();
+  TextEditingController descriptionController = TextEditingController();
+  TextEditingController gymController = TextEditingController();
+
+  initData(BuildContext providerContext) {
+    final data = widget.routeData;
+    if (data == null || dataInitialized) return;
+
+    gradingController.text = data.getGrade();
+    descriptionController.text = data.getDescription();
+    gymController.text = data.getGym();
+
+    Provider.of<ImageAddRouteProvider>(providerContext).setNetworkImage(data.image);
+    dataInitialized = true;
+  }
+
+  _handleSave(BuildContext providerContext) async {
+    try {
+      var data = widget.routeData;
+      var imageProvider = Provider.of<ImageAddRouteProvider>(providerContext, listen: false);
+      if (data == null) {
+        // new
+        await RouteService().addRoute(
+            grade: gradingController.text,
+            description: descriptionController.text,
+            gym: gymController.text,
+            image: imageProvider.getImage(),
+            user: Provider.of<LoginProvider>(providerContext, listen: false).getUser());
+      } else {
+        // edit
+        data = await RouteService().editRoute(
+            grade: gradingController.text, description: descriptionController.text, gym: gymController.text, imageProvider: imageProvider, route: data);
+      }
+
+      // ignore: use_build_context_synchronously
+      Navigator.pop(providerContext, data);
+    } catch (e) {
+      showModalBottomSheet(context: providerContext, builder: (_) => Text(e.toString()));
+    }
+  }
+
+  bool _canSave(providerContext) {
+    if (gradingController.text.isEmpty) return false;
+
+    if (descriptionController.text.isEmpty) return false;
+
+    if (gymController.text.isEmpty) return false;
+
+    if (Provider.of<ImageAddRouteProvider>(providerContext).isEmpty()) return false;
+
+    return true;
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (first) {
-      first = false;
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        photoFuture = await _getPhotoFromCamera(context);
-        if (mounted) setState(() {});
-      });
-    }
+    return ChangeNotifierProvider(
+        create: (_) => ImageAddRouteProvider(),
+        builder: (providerContext, child) {
+          initData(providerContext);
 
-    return FutureBuilder(
-        future: photoFuture,
-        initialData: const SizedBox.shrink(),
-        builder: (context, snapshot) {
-          switch (snapshot.connectionState) {
-            case ConnectionState.waiting:
-            case ConnectionState.active:
-              break;
+          return Scaffold(
+              appBar: AppBar(
+                title: const Text('New route'),
+                leading: IconButton(onPressed: () => Navigator.pop(providerContext), icon: const Icon(Icons.cancel)),
+                actions: [IconButton(onPressed: _canSave(providerContext) ? () => _handleSave(providerContext) : null, icon: const Icon(Icons.check))],
+              ),
+              body: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 16),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      //Image
+                      const AddRoutePhotoDisplay(),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Grading
+                          Container(
+                            margin: const EdgeInsets.only(top: 8),
+                            padding: const EdgeInsets.all(8.0),
+                            decoration: BoxDecoration(border: Border.all(), borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),
+                            child: const Text('Grading', style: TextStyle(fontWeight: FontWeight.bold)),
+                          ),
+                          Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.all(8.0),
+                              decoration: BoxDecoration(border: Border.all(), borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20))),
+                              child: TextField(
+                                controller: gradingController,
+                                onChanged: (s) => setState(() {}),
+                              )),
 
-            case ConnectionState.none:
-              log('No connection to camera');
-              Navigator.pop(context);
-              break;
+                          // Description
+                          Container(
+                            margin: const EdgeInsets.only(top: 8),
+                            padding: const EdgeInsets.all(8.0),
+                            decoration: BoxDecoration(border: Border.all(), borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),
+                            child: const Text('Description', style: TextStyle(fontWeight: FontWeight.bold)),
+                          ),
+                          Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.all(8.0),
+                              decoration: BoxDecoration(border: Border.all(), borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20))),
+                              child: TextField(
+                                controller: descriptionController,
+                                onChanged: (s) => setState(() {}),
+                              )),
 
-            case ConnectionState.done:
-              if (snapshot.hasError) {
-                log(snapshot.error.toString());
-                Navigator.pop(context);
-                break;
-              }
+                          // Gym
+                          Container(
+                            margin: const EdgeInsets.only(top: 8),
+                            padding: const EdgeInsets.all(8.0),
+                            decoration: BoxDecoration(border: Border.all(), borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),
+                            child: const Text('Gym', style: TextStyle(fontWeight: FontWeight.bold)),
+                          ),
+                          Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.all(8.0),
+                              decoration: BoxDecoration(border: Border.all(), borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20))),
+                              child: TextField(
+                                controller: gymController,
+                                onChanged: (s) => setState(() {}),
+                              )),
 
-              if (!snapshot.hasData) {
-                Navigator.pop(context);
-              }
-              File file = snapshot.data;
-              return Scaffold(
-                appBar: AppBar(
-                  title: const Text('Adding a new route'),
+                          // Tags
+                          Container(
+                            margin: const EdgeInsets.only(top: 8),
+                            padding: const EdgeInsets.all(8.0),
+                            decoration: BoxDecoration(border: Border.all(), borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),
+                            child: const Text('Tags', style: TextStyle(fontWeight: FontWeight.bold)),
+                          ),
+                          Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.all(8.0),
+                              decoration: BoxDecoration(border: Border.all(), borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20))),
+                              child: const TextField()),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                body: Container(
-                  child: kIsWeb
-                      ? Image.network(file.path)
-                      : Image.file(
-                          file,
-                          fit: BoxFit.cover,
-                        ),
-                ),
-              );
-          }
-          return const SizedBox.shrink();
+              ));
         });
-  }
-
-  Future<dynamic> _getPhotoFromCamera(BuildContext context) {
-    return Navigator.push(context, MaterialPageRoute(builder: (_) {
-      return CameraCamera(
-        onFile: (file) {
-          Navigator.pop(context, file);
-        },
-      );
-    }));
   }
 }

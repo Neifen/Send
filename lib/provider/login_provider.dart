@@ -10,4 +10,8 @@ class LoginProvider extends ChangeNotifier {
     loggedIn = change;
     notifyListeners();
   }
+
+  String getUser() {
+    return 'Nate';
+  }
 }

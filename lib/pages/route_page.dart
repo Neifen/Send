@@ -1,20 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:send/database/route_data.dart';
+import 'package:send/pages/add_route/add_route_page.dart';
 import 'package:send/pages/route_page/route_rating_display.dart';
 import 'package:send/pages/route_page/route_image_display.dart';
 import 'package:send/pages/route_page/route_send_counter.dart';
 import 'package:send/services/route_service.dart';
 
-class RoutePage extends StatelessWidget {
-  final RouteData route;
-  const RoutePage(this.route, {super.key});
+class RoutePage extends StatefulWidget {
+  final RouteData initRoute;
+  const RoutePage(this.initRoute, {super.key});
+
+  @override
+  State<RoutePage> createState() => _RoutePageState();
+}
+
+class _RoutePageState extends State<RoutePage> {
+  late RouteData route;
+  bool updated = false;
+
+  @override
+  void initState() {
+    super.initState();
+    route = widget.initRoute;
+  }
 
   @override
   Widget build(BuildContext context) {
     final overviewService = RouteService();
 
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+          leading: IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed: () => Navigator.pop(context, updated),
+      )),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AddEditRoutePage(routeData: route))).then((value) {
+          if (value == null) return;
+          setState(() {
+            route = value;
+            updated = true;
+          });
+        }),
+        child: const Icon(Icons.edit),
+      ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 16),
         child: SingleChildScrollView(

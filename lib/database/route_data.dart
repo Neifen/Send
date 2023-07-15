@@ -1,7 +1,5 @@
 // ignore_for_file: constant_identifier_names
 
-import 'dart:typed_data';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:send/services/route_service.dart';
 
@@ -12,6 +10,8 @@ class RouteData {
   static const String DATE_CREATED = 'datecreated';
   static const String GRADE = 'grade';
   static const String DESCRIPTION = 'description';
+  static const String GYM = 'gym';
+  static const String AUTHOR = 'author';
   static const String TAGS = 'tags';
   static const String SENT_COUNT = 'sent_count';
   static const String SENT_COUNT_COUNTER = 'counter';
@@ -21,21 +21,23 @@ class RouteData {
 
   late Map<String, dynamic> _data;
   late String id;
-  late Future<Uint8List?> image;
+  late Future<String?> image;
 
   RouteData(DocumentSnapshot snapshot, RouteService service) {
     _data = snapshot.data() as Map<String, dynamic>;
     id = snapshot.id;
-    image = service.getSmallImage(_data[RouteData.PHOTO]);
+    image = service.getImageUrl(_data[RouteData.PHOTO]);
   }
 
-  double getRating() {
-    return _data[RATING][RATING_RATING];
+  String getRating() {
+    final resp = _data[RATING][RATING_RATING];
+    if (resp == null) return 'Not yet rated';
+    return '$resp';
   }
 
   double getUserRating(String user) {
     var values = _data[RATING][RATING_VOTES];
-    return values[user] ?? 0.0;
+    return values?[user] ?? 0.0;
   }
 
   int getSentCount() {
@@ -51,11 +53,15 @@ class RouteData {
     return _data[DESCRIPTION];
   }
 
+  String getGym() {
+    return _data[GYM];
+  }
+
   String getGrade() {
     return _data[GRADE];
   }
 
-  String getPhoto() {
+  String getPhotoPath() {
     return _data[PHOTO];
   }
 
@@ -65,5 +71,12 @@ class RouteData {
 
   void setRating(Map newRating) {
     _data[RATING] = newRating;
+  }
+
+  void edit({required String grade, required String description, required String gym, required String path}) {
+    _data[GRADE] = grade;
+    _data[DESCRIPTION] = description;
+    _data[GYM] = gym;
+    image = Future.value(path);
   }
 }
