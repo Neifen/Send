@@ -1,22 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:send/components/my_loader.dart';
 import 'package:send/database/route_data.dart';
-import 'package:send/pages/add_route/add_route_page.dart';
+import 'package:send/pages/add_route/add_edit_route_page.dart';
 import 'package:send/pages/route_page.dart';
-import 'package:send/services/route_service.dart';
+import 'package:send/provider/route_list_provider.dart';
+import 'package:send/provider/selected_router_provider.dart';
 
-class OverviewPage extends StatefulWidget {
+class OverviewPage extends ConsumerWidget {
   const OverviewPage({super.key});
 
   @override
-  State<OverviewPage> createState() => _OverviewPageState();
-}
-
-class _OverviewPageState extends State<OverviewPage> {
-  @override
-  Widget build(BuildContext context) {
-    final overviewService = RouteService();
-    final Future<List> list = RouteService().getAll();
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
         appBar: AppBar(
           title: const Text('SEND'),
@@ -27,32 +22,27 @@ class _OverviewPageState extends State<OverviewPage> {
           ],
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AddEditRoutePage())).then((value) {
-            setState(() {});
-          }),
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddEditRoutePage())),
           child: const Icon(Icons.add),
         ),
         body: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 16),
           child: Column(
             children: [
-              const SearchBar(leading: Icon(Icons.search)), //todo
+              const SearchBar(leading: Icon(Icons.search)), //todo with filter in riverpod
               MyLoader(
-                  future: list,
+                  future: ref.watch(routeList.future),
                   builder: (_, snapshot) => Expanded(
                         child: ListView.builder(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             itemCount: snapshot.data?.length,
                             itemBuilder: ((_, index) {
-                              RouteData routeData = RouteData(snapshot.data?[index], overviewService);
+                              RouteData routeData = snapshot.data?[index];
 
                               return OutlinedButton(
                                 onPressed: () {
-                                  Navigator.push(context, MaterialPageRoute(builder: (_) => RoutePage(routeData))).then((updated) {
-                                    if (updated) {
-                                      setState(() {});
-                                    }
-                                  });
+                                  ref.read(selectedRoute.notifier).selectRoute(routeData);
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const RoutePage()));
                                 },
                                 style: OutlinedButton.styleFrom(
                                   shape: RoundedRectangleBorder(
@@ -65,7 +55,7 @@ class _OverviewPageState extends State<OverviewPage> {
                                       title: Text(routeData.getDescription()),
                                       subtitle: Text('test: ${routeData.getGrade()}'),
                                       leading: MyLoader(
-                                        future: overviewService.getImageUrl(routeData.getPhotoPath()),
+                                        future: routeData.getBestPathForIcon(),
                                         builder: (context, snapshot) => Image.network(snapshot.data),
                                       )),
                                 ),

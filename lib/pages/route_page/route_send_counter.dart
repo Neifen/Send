@@ -1,24 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:send/database/route_data.dart';
-import 'package:send/services/route_service.dart';
+import 'package:send/provider/selected_router_provider.dart';
 
-class RouteSendCounter extends StatefulWidget {
-  final RouteData route;
-  final RouteService overviewService;
-  const RouteSendCounter({super.key, required this.route, required this.overviewService});
+class RouteSendCounter extends ConsumerWidget {
+  const RouteSendCounter({super.key});
 
   @override
-  State<RouteSendCounter> createState() => _RouteSendCounterState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    RouteData route = getSelectedRoute(ref);
 
-class _RouteSendCounterState extends State<RouteSendCounter> {
-  int sentCount = 0;
-  bool hasSent = false;
-
-  @override
-  Widget build(BuildContext context) {
-    sentCount = widget.route.getSentCount();
-    hasSent = widget.route.hasUserSent('Nate');
+    int sentCount = route.getSentCount();
+    bool hasSent = route.hasUserSent('Nate');
 
     return Container(
         decoration: BoxDecoration(border: Border.all(), borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20))),
@@ -32,11 +25,8 @@ class _RouteSendCounterState extends State<RouteSendCounter> {
                 child: Text('$sentCount'),
               ),
               OutlinedButton(
-                  onPressed: () async {
-                    Map counterMap = await widget.overviewService.changeSentCount(widget.route.id, 'Nate');
-                    setState(() {
-                      widget.route.setSentCounter(counterMap);
-                    });
+                  onPressed: () {
+                    ref.read(selectedRoute.notifier).clickSent();
                   },
                   child: Text(hasSent ? 'Nvm...' : 'Sent!'))
             ],

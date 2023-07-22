@@ -1,17 +1,27 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:send/database/route_data.dart';
 
-class LoginProvider extends ChangeNotifier {
-  LoginProvider() {
-    login(true);
+final loginProvider = NotifierProvider<LoginProvider, String>(LoginProvider.new);
+
+class LoginProvider extends Notifier<String> {
+  login(String userName) {
+    state = userName;
   }
-  bool loggedIn = false;
 
-  login(bool change) {
-    loggedIn = change;
-    notifyListeners();
+  bool isLoggedIn() {
+    return state.isNotEmpty;
+  }
+
+  bool isAuthor(RouteData route) {
+    return route.getAuthor() == state;
   }
 
   String getUser() {
+    return state;
+  }
+
+  @override
+  String build() {
     return 'Nate';
   }
 }

@@ -46,9 +46,13 @@ class _AddRoutePhotoDisplayState extends State<AddRoutePhotoDisplay> {
                 InteractiveViewer(
                   maxScale: 5,
                   child: kIsWeb || imageProvider.isOnline()
-                      ? Image.network(imageProvider.getImagePath())
+                      ? Image.network(
+                          imageProvider.getImagePath(),
+                          height: 400,
+                        )
                       : Image.file(
                           File(imageProvider.getImagePath()),
+                          height: 400,
                           fit: BoxFit.cover,
                         ),
                 ),
@@ -62,6 +66,6 @@ class _AddRoutePhotoDisplayState extends State<AddRoutePhotoDisplay> {
   }
 
   _handleNewPhoto(Future<XFile?> xFileF) async {
-    context.read<ImageAddRouteProvider>().setImage(xFileF);
+    context.read<ImageAddRouteProvider>().updateLocalImage(xFileF);
   }
 }

@@ -45,7 +45,10 @@ dependencies:
   flutter_rating_bar: ^4.0.1
   image_picker: ^1.0.0
   uuid: ^3.0.7
-  firebase_storage_web: ^3.6.5
+  flutter_riverpod: ^2.3.6
+  flutter_image_compress: ^2.0.3
+  choose_input_chips: ^1.1.2
+
 
 
 dev_dependencies:

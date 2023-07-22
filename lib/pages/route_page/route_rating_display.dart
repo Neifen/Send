@@ -1,21 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:send/database/route_data.dart';
-import 'package:send/services/route_service.dart';
+import 'package:send/provider/selected_router_provider.dart';
 
-class RouteRatingDisplay extends StatefulWidget {
-  final RouteData route;
-  final RouteService overviewService;
-  const RouteRatingDisplay({super.key, required this.route, required this.overviewService});
+class RouteRatingDisplay extends ConsumerWidget {
+  const RouteRatingDisplay({super.key});
 
   @override
-  State<RouteRatingDisplay> createState() => _RouteRatingDisplayState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    RouteData route = getSelectedRoute(ref);
 
-class _RouteRatingDisplayState extends State<RouteRatingDisplay> {
-  @override
-  Widget build(BuildContext context) {
-    String currentRating = widget.route.getRating();
+    String currentRating = route.getRating();
     return Container(
         decoration: BoxDecoration(border: Border.all()),
         child: Padding(
@@ -29,16 +25,13 @@ class _RouteRatingDisplayState extends State<RouteRatingDisplay> {
               ),
               RatingBar.builder(
                   minRating: 1,
-                  initialRating: widget.route.getUserRating('Nate'),
+                  initialRating: route.getUserRating('Nate'),
                   itemBuilder: (context, _) => const Icon(
                         Icons.star,
                         color: Colors.amber,
                       ),
-                  onRatingUpdate: (value) async {
-                    Map newRating = await widget.overviewService.changeRating(widget.route.id, value, 'Nate');
-                    setState(() {
-                      widget.route.setRating(newRating);
-                    });
+                  onRatingUpdate: (value) {
+                    ref.read(selectedRoute.notifier).setRating(value);
                   })
             ],
           ),

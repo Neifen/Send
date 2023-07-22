@@ -1,27 +1,27 @@
+import 'dart:typed_data';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 import 'package:send/database/route_data.dart';
 import 'package:send/database/versioning.dart';
-import 'package:send/provider/image_add_route_provider.dart';
 import 'package:uuid/uuid.dart';
 
 class RouteService {
-  Future<List> getAll() async {
+  Future<List<DocumentSnapshot>> getAll() async {
     final db = FirebaseFirestore.instance;
 
-    QuerySnapshot snapshot = await db.collection(Versioning.DB_VERSION + RouteData.PATH).get();
+    QuerySnapshot snapshot = await db.collection(Versioning.DB_VERSION + RouteData.ACTIVE_PATH).get();
     return snapshot.docs;
   }
 
   Future<String?> getImageUrl(String reference) {
     final storage = FirebaseStorage.instance;
 
-    final Reference pathReference = storage.ref(reference);
-
     try {
+      final Reference pathReference = storage.ref(reference);
       return pathReference.getDownloadURL();
     } on FirebaseException catch (e) {
       return Future.error(e);
@@ -43,7 +43,7 @@ class RouteService {
     if (userRating < 1 || userRating > 5) throw Exception('Rating can\'t be smaller than 1 or bigger than 5');
     final db = FirebaseFirestore.instance;
 
-    final sfDocRef = db.collection(Versioning.DB_VERSION + RouteData.PATH).doc(uid);
+    final sfDocRef = db.collection(Versioning.DB_VERSION + RouteData.ACTIVE_PATH).doc(uid);
     Map newRating = {};
     await db.runTransaction((transaction) async {
       final snapshot = await transaction.get(sfDocRef);
@@ -78,7 +78,7 @@ class RouteService {
   Future<Map> changeSentCount(String uid, String user) async {
     final db = FirebaseFirestore.instance;
 
-    final sfDocRef = db.collection(Versioning.DB_VERSION + RouteData.PATH).doc(uid);
+    final sfDocRef = db.collection(Versioning.DB_VERSION + RouteData.ACTIVE_PATH).doc(uid);
     Map counter = {};
     await db.runTransaction((transaction) async {
       final snapshot = await transaction.get(sfDocRef);
@@ -95,77 +95,89 @@ class RouteService {
     return counter;
   }
 
-  Future<dynamic> addRoute({required String grade, required String description, required String gym, required XFile image, required String user}) async {
-    final path = "routes/${const Uuid().v1()}.jpg";
-    final storage = FirebaseStorage.instance;
-    try {
-      final metadata = SettableMetadata(
-        contentType: 'image/jpeg',
-      );
+  Future<Uint8List> compress(Uint8List list, int quality) async {
+    var result = await FlutterImageCompress.compressWithList(
+      list,
+      minHeight: 1920,
+      minWidth: 1080,
+      quality: quality,
+      rotate: 135,
+    );
+    return result;
+  }
 
-      storage.ref(path).putData(await image.readAsBytes(), metadata);
+  upload(Future<Uint8List> imageBytes, {required String storeRef, int quality = 80}) async {
+    final storage = FirebaseStorage.instance;
+    final metadata = SettableMetadata(
+      contentType: 'image/jpeg',
+    );
+
+    Uint8List data;
+    data = await compress(await imageBytes, quality);
+
+    storage.ref(storeRef).putData(data, metadata);
+  }
+
+  Future<RouteData> addRoute(RouteData route, {required XFile image}) async {
+    String uuid = const Uuid().v1();
+    final ogRef = "routes/$uuid.jpg";
+    final iconRef = "icons/$uuid.jpg";
+    try {
+      upload(image.readAsBytes(), storeRef: ogRef);
+      upload(image.readAsBytes(), storeRef: iconRef, quality: 20);
     } on FirebaseException catch (e) {
       return Future.error(e);
     }
 
-    Map<String, dynamic> route = {
-      RouteData.GRADE: grade,
-      RouteData.DESCRIPTION: description,
-      RouteData.GYM: gym,
-      RouteData.PHOTO: path,
-      RouteData.AUTHOR: user,
-      RouteData.DATE_CREATED: Timestamp.now(),
-      RouteData.RATING: {RouteData.RATING_VOTES: {}},
-      RouteData.SENT_COUNT: {RouteData.SENT_COUNT_COUNTER: {}}
-    };
+    route.updateImages(ogRef: ogRef, iconRef: iconRef);
 
     final db = FirebaseFirestore.instance;
-    DocumentReference ref = await db.collection(Versioning.DB_VERSION + RouteData.PATH).add(route);
-    return ref;
+    var newRoute = await db.collection(Versioning.DB_VERSION + RouteData.ACTIVE_PATH).add(route.getData());
+
+    route.updateId(newRoute.id);
+
+    return route;
   }
 
-  Future<RouteData> editRoute(
-      {required String grade, required String description, required String gym, required ImageAddRouteProvider imageProvider, required RouteData route}) async {
+  Future<RouteData> updateRoute(RouteData route, {XFile? newImage}) async {
     final db = FirebaseFirestore.instance;
-    final sfDocRef = db.collection(Versioning.DB_VERSION + RouteData.PATH).doc(route.id);
+    final sfDocRef = db.collection(Versioning.DB_VERSION + RouteData.ACTIVE_PATH).doc(route.id);
 
     await db.runTransaction((transaction) async {
-      final snapshot = await transaction.get(sfDocRef);
-      if (snapshot.data() == null || snapshot.data()!.isEmpty) throw FlutterError("Can't update field that doesn't exist on the Database");
+      final oldRoute = (await transaction.get(sfDocRef)).data();
+      if (oldRoute == null || oldRoute.isEmpty) throw FlutterError("Can't update field that doesn't exist on the Database");
 
-      final localPath = imageProvider.getImagePath(); // can also be old path
-      var path = localPath;
-
-      if (!imageProvider.isOnline()) {
+      if (newImage != null) {
         final storage = FirebaseStorage.instance;
         //delete old
-        final oldPhotoUrl = snapshot.data()![RouteData.PHOTO];
-        storage.ref(oldPhotoUrl).delete();
+        final oldPhotoUrl = oldRoute[RouteData.PHOTO];
+        final oldIconUrl = oldRoute[RouteData.ICON];
+
         //add new
         try {
-          final metadata = SettableMetadata(
-            contentType: 'image/jpeg',
-          );
+          final uuid = const Uuid().v1();
+          final ogStoreRef = "routes/$uuid.jpg";
+          final iconStoreRef = "icons/$uuid.jpg";
 
-          path = "routes/${const Uuid().v1()}.jpg";
-          storage.ref(path).putData(await imageProvider.getImage().readAsBytes(), metadata);
+          await upload(newImage.readAsBytes(), storeRef: ogStoreRef);
+          await upload(newImage.readAsBytes(), storeRef: iconStoreRef, quality: 20);
+
+          storage.ref(oldPhotoUrl).delete().catchError((err) => print(err));
+          storage.ref(oldIconUrl).delete().catchError((err) => print(err));
+
+          route.updateImages(ogRef: ogStoreRef, iconRef: iconStoreRef);
         } on FirebaseException catch (e) {
           return Future.error(e);
         }
       }
 
-      transaction.update(sfDocRef, {
-        RouteData.GRADE: grade,
-        RouteData.DESCRIPTION: description,
-        RouteData.GYM: gym,
-        RouteData.PHOTO: path,
-      });
-
-      route.edit(grade: grade, description: description, gym: gym, path: localPath);
+      transaction.update(sfDocRef, route.getData());
+      print("route successfully updated! (right after transaction.update)");
     }).then(
       (value) => print("DocumentSnapshot successfully updated!"),
       onError: (e) => print("Error updating document $e"),
     );
+
     return route;
   }
 }
